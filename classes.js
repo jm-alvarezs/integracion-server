@@ -52,18 +52,14 @@ class Game {
               atacante.emit("ganador", { razon: "fin" });
               atacado.emit("perdedor", { razon: "fin" });
             } else {
-              setTimeout(() => {
-                atacante.emit("turno");
-              }, 1000);
+              atacante.emit("turno");
             }
           } else {
             atacante.emit("fracaso", data);
             atacado.emit("salvado", data);
-            setTimeout(() => {
-              atacado.emit("turno");
-            }, 1000);
             this.setAtacado(atacante);
             this.setAtacante(atacado);
+            atacado.emit("turno");
           }
         } else {
           atacante.emit("perdedor", { razon: "tiro invalido" });
@@ -129,21 +125,16 @@ class Game {
   }
 
   validarDisparo(x, y) {
-    return x < 10 && x > 0 && y < 10 && y > 0;
+    return x < 10 && x > -1 && y < 10 && y > -1;
   }
 
   disparar(x, y, atacado) {
-    const tablero = atacado.getTablero();
+    const matriz = atacado.getMatriz();
     let scored = false;
-    Object.keys(tablero).forEach((nombre) => {
-      const nave = tablero[nombre];
-      if (x >= nave.xi && x <= nave.xf) {
-        if (y >= nave.yi && y <= nave.yf) {
-          scored = true;
-          atacado.hitShip(x, y);
-        }
-      }
-    });
+    if (matriz[y][x] === "+") {
+      scored = true;
+      atacado.hitShip(y, x);
+    }
     return scored;
   }
 
@@ -173,6 +164,10 @@ class Jugador {
     return this.tablero;
   }
 
+  getMatriz() {
+    return this.matriz;
+  }
+
   setTablero(tablero) {
     this.tablero = tablero;
     this.matriz = this.generarMatriz(tablero);
@@ -184,56 +179,26 @@ class Jugador {
   }
 
   generarMatriz(tablero) {
+    const matriz = [];
+    for (let i = 0; i < 10; i++) {
+      matriz.push([]);
+      for (let j = 0; j < 10; j++) {
+        matriz[i][j] = "-";
+      }
+    }
     Object.keys(tablero).forEach((barco) => {
-      const orientation = Math.random() < 0.5; //0 horizontal, 1 vertical
-      const limit = 10 - barco.tam;
-      let disponible = false;
-      let start = 0;
-      let end = 0;
-      if (orientation) {
-        //vertical
-        while (!disponible) {
-          start = Math.floor(Math.random() * 10) + 0;
-          end = Math.floor(Math.random() * limit) + 0;
-          for (let i = 0; i < barco.tam; i++) {
-            if (tableroLocal[start][end + i].includes("nn")) {
-              disponible = true;
-            } else {
-              disponible = false;
-              break;
-            }
-          }
+      const { yi, yf, xi, xf } = tablero[barco];
+      for (let i = yi; i <= yf; i++) {
+        for (let j = xi; j <= xf; j++) {
+          matriz[i][j] = "+";
         }
-        for (let i = 0; i < barco.tam; i++) {
-          tableroLocal[start][end + i] = `${start}-${end + i}-${barco.barco}-0`;
-        }
-        tableroInicialServer[serverShip].xi = start;
-        tableroInicialServer[serverShip].yi = end;
-        tableroInicialServer[serverShip].xf = start;
-        tableroInicialServer[serverShip].yf = end + barco.tam - 1;
-      } else {
-        //horizontal
-        while (!disponible) {
-          start = Math.floor(Math.random() * limit) + 0; //y axis
-          end = Math.floor(Math.random() * 10) + 0;
-          for (let i = 0; i < barco.tam; i++) {
-            if (tableroLocal[start + i][end].includes("nn")) disponible = true;
-            else {
-              disponible = false;
-              break;
-            }
-          }
-        }
-        for (let i = 0; i < barco.tam; i++) {
-          tableroLocal[start + i][end] = `${start + i}-${end}-${barco.barco}-0`;
-        }
-        tableroInicialServer[serverShip].xi = start;
-        tableroInicialServer[serverShip].yi = end;
-        tableroInicialServer[serverShip].xf = start + barco.tam - 1;
-        tableroInicialServer[serverShip].yf = end;
       }
     });
-    return [tableroLocal, tableroInicialServer];
+    return matriz;
+  }
+
+  hitShip(x, y) {
+    this.matriz[x][y] = "-";
   }
 
   hasShip(x, y, tablero) {
@@ -249,11 +214,15 @@ class Jugador {
   }
 
   defeated() {
-    return Object.keys(this.getTablero()).length === 0;
-  }
-
-  destroyShip(nombre) {
-    delete this.tablero[nombre];
+    let naves = 0;
+    for (let i = 0; i < 10; i++) {
+      for (let j = 0; j < 10; j++) {
+        if (this.matriz[i][j] === "+") {
+          naves++;
+        }
+      }
+    }
+    return naves === 0;
   }
 }
 
