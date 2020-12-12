@@ -1,7 +1,7 @@
 const socketIo = require("socket.io");
 const express = require("express");
 const http = require("http");
-const port = 5000;
+const port = 5500;
 const app = express();
 const server = http.createServer(app);
 const cors = require("cors");
@@ -9,12 +9,20 @@ const { Game } = require("./classes");
 
 const io = socketIo(server, {
   cors: {
-    origin: "http://localhost:3000",
+    origin: "http://localhost:3001",
     credentials: true,
   },
 });
 
-const palabras = ["integracion", "battleship", "moviles"];
+const palabras = [
+  "integracion",
+  "battleship",
+  "moviles",
+  "juanma",
+  "orlando",
+  "chris",
+  "karla",
+];
 
 let game = null;
 
@@ -22,7 +30,7 @@ let room = null;
 
 const allowedOrigins = [
   "http://localhost:5500",
-  "http://localhost:3000",
+  "http://localhost:3001",
   "http://127.0.0.1:3000",
   "*",
   null,
