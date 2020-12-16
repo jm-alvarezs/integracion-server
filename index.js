@@ -22,7 +22,13 @@ const palabras = [
   "orlando",
   "chris",
   "karla",
+  "irving",
+  "udem",
+  "amarillo",
+  "troyanos",
 ];
+
+const rooms = new Map();
 
 let game = null;
 
@@ -56,12 +62,18 @@ app.use(
 
 app.get("/room", (req, res) => {
   try {
-    if (room === null) {
-      const index = Math.ceil(Math.random() * palabras.length);
+    if (room === null || rooms.get(room) === 2) {
+      let index = Math.ceil(Math.random() * palabras.length);
       room = palabras[index];
+      while (rooms.has(room)) {
+        index = Math.ceil(Math.random() * palabras.length);
+        room = palabras[index];
+      }
+      rooms.set(room, 0);
       const nsp = io.of(`/${room}`);
       game = new Game(nsp, room);
     }
+    rooms.set(room, rooms.get(room) + 1);
     res.status(200).send({ room });
   } catch (error) {
     console.log(error);
